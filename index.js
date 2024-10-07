@@ -42,8 +42,8 @@ async function run() {
                 currency: "EUR",
                 tran_id: trxId,
                 success_url: "http://localhost:5000/success-payment",
-                fail_url: "http://yoursite.com/fail.php",
-                cancel_url: "http://yoursite.com/cancel.php",
+                fail_url: "http://localhost:5000/fail",
+                cancel_url: "http://localhost:5000/cancel",
                 cus_name: "Customer Name",
                 cus_email: "cust@yahoo.com",
                 cus_add1: "Dhaka",
@@ -106,8 +106,35 @@ async function run() {
         app.post("/success-payment", async (req, res) => {
             const successData = req.body;
 
-            console.log("success Data", successData);
+            if (successData.status !== "VALID") {
+                throw new Error("Unauthorized payment, Invalid Payment");
+            }
 
+            const query = {
+                paymentId: successData.tran_id
+            }
+
+            const update = {
+                $set: {
+                    status: "Success",
+                },
+            }
+
+            const updateData = await paymentsCollection.updateOne(query, update);
+
+            console.log("success Data", successData);
+            console.log("update Data", updateData);
+
+            res.redirect("http://localhost:3000/success");
+
+        })
+
+        app.post("/fail", async (req, res) => {
+            res.redirect("http://localhost:3000/fail");
+        })
+
+        app.post("/cancel", async (req, res) => {
+            res.redirect("http://localhost:3000/cancel");
         })
     } finally {
         // Ensures that the client will close when you finish/error
